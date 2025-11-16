@@ -1,0 +1,55 @@
+name: Fix Pages Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Move files to root
+        run: |
+          # Move files from "untitled folder" to root if they exist
+          if [ -d "untitled folder" ]; then
+            echo "Moving files from 'untitled folder' to root..."
+            cp "untitled folder/index.html" index.html 2>/dev/null || true
+            cp "untitled folder/styles.css" styles.css 2>/dev/null || true
+            cp "untitled folder/script.js" script.js 2>/dev/null || true
+            echo "Files moved successfully"
+          else
+            echo "No 'untitled folder' found, using existing root files"
+          fi
+          
+          # List files in root to verify
+          ls -la
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
